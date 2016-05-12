@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>RWebSocket</title>
+        <script type="text/javascript">
+
+            var websocket;
+            var identifier = 0;
+            var idMessage = 0;
+            var idReceived = 0;
+            var queue = [];
+
+            window.onload = function () { // execute once the page loads
+                initialize();
+            };
+
+            function initialize() { // URI = ws://10.16.0.165:8080/chat/chat
+                connect('ws://' + window.location.host + '/RWebsocketsServer2queue/FServerEndpoint');
+            }
+
+            function connect(host) { // connect to the host websocket servlet
+                writeToHistory('Starting');
+                if ('WebSocket' in window)
+                    websocket = new WebSocket(host);
+                else if ('MozWebSocket' in window)
+                    websocket = new MozWebSocket(host);
+                else {
+                    writeToHistory('Get a real browser which supports WebSocket.');
+                    return;
+                }
+
+                websocket.onopen = onOpen; // set the event listeners below
+                websocket.onclose = onClose;
+                websocket.onmessage = onMessage;
+                websocket.onerror = onError;
+            }
+
+            function onOpen(event) {
+                writeToHistory('Connected to ' + window.location.host + '.');
+                if (identifier === 0)
+                    websocket.send(getHandshake());
+                else
+                    websocket.send(getReconnect(identifier));            
+                doSend();
+            }
+
+            function onClose(event) {
+                writeToHistory('WebSocket closed.');
+                window.setTimeout(function () {
+                    connect('ws://' + window.location.host + '/RWebsocketsServer2queue/FServerEndpoint');
+                }, 10000);
+
+            }
+            // process the received message
+            function onMessage(message) { 
+                writeToHistory(message.data);
+                var object = JSON.parse(message.data);
+                if (object.Type === 'Handshake') {
+                    identifier = object.Identifier;
+                    for (var i in queue){
+                        websocket.send(i);
+                    }
+                }
+                if (object.Type === 'Message') {
+                    if (idReceived < object.IdMessage) {
+                        idReceived = object.IdMessage;
+
+                    }
+
+                    websocket.send(getAck(identifier, object.IdMessage));
+                }
+                if (object.Type === 'ACK') {
+                    
+                    queue = deleteFromQueue(queue, object.IdAck);
+                }
+            }
+
+            function onError(event) {
+                writeToHistory('WebSocket error (' + event.data + ').');
+                document.getElementById('chat').onkeydown = null;
+
+
+            }
+            
+            //creates a new message each few seconds and sends it ot the server
+            function doSend() {
+
+                window.setInterval(function () {
+                    if (identifier !== 0) {
+                        idMessage++;
+
+                        var message = getMessage(idMessage, identifier, "message");
+                        //writeToHistory(message);
+                        websocket.send(message);
+                        queue.push(message);
+                    }
+                }, 10000);
+
+            }
+
+            //writes message to history and updates screen
+            function writeToHistory(text) {
+                var history = document.getElementById('history');
+                var p = document.createElement('p');
+                p.style.wordWrap = 'break-word';
+                p.innerHTML = text;
+                history.appendChild(p);
+                while (history.childNodes.length > 25)
+                    history.removeChild(console.firstChild);
+                history.scrollTop = history.scrollHeight;
+            }
+            //filters messages from queue whose ID is lower than the ACK received
+            function deleteFromQueue(queue, idAck) {
+                
+                return queue.filter(filter( queue, idAck ));
+            }
+            //Fliter function for deleteFromQueue
+            function filter (item, idAck){
+                return item.IdMessage < idAck;
+            }
+            
+            
+            //Builds ACK message
+            function getAck(identifier, idAck) {
+                return '{"Type":"ACK","Identifier":"' + identifier + '","IdAck":"' + idAck + '"}';
+            }
+            //Builds handshake message
+            function getHandshake() {
+                return '{"Type":"Handshake","Identifier":"0"}';
+            }
+            //Builds message
+            function getMessage(idMessage, identifier, message) {
+                return '{"IdMessage":"' + idMessage + '","Type":"Message","Identifier":"' + identifier + '","Message":"' + message + '"}';
+            }
+            //Builds reconnnect message
+            function getReconnect(identifier) {
+                return '{"Type":"Handshake","Identifier":"' + identifier + '"}';
+            }
+
+
+
+
+
+
+        </script>
+    </head>
+    <body>
+        <noscript>JavaScript must be enabled for WebSockets to work.</noscript>
+        <div id="container"> 
+            <p id="history" ></p> 
+        </div>
+    </body>
+</html>
