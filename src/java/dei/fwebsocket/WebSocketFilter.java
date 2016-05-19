@@ -12,6 +12,11 @@ import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 
+/**
+ * Based on http://stackoverflow.com/questions/17936440/accessing-httpsession-from-httpservletrequest-in-a-web-socket-serverendpoint
+ * @author Chad N B
+ */
+
 @WebFilter(value = "/FServerEndpoint")
 public class WebSocketFilter implements Filter {
     @Override
