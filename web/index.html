@@ -37,6 +37,7 @@
 
             function onOpen(event) {
                 writeToHistory('Connected to ' + window.location.host + '.');
+                writeToHistory(document.cookie);
                 if (identifier === 0)
                     websocket.send(getHandshake());
                 else

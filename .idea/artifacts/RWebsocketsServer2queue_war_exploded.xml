@@ -1,0 +1,13 @@
+<component name="ArtifactManager">
+  <artifact type="exploded-war" name="RWebsocketsServer2queue:war exploded">
+    <output-path>$PROJECT_DIR$/out/artifacts/RWebsocketsServer2queue_war_exploded</output-path>
+    <root id="root">
+      <element id="javaee-facet-resources" facet="RWebsocketsServer2queue/web/Web" />
+      <element id="directory" name="WEB-INF">
+        <element id="directory" name="classes">
+          <element id="module-output" name="RWebsocketsServer2queue" />
+        </element>
+      </element>
+    </root>
+  </artifact>
+</component>

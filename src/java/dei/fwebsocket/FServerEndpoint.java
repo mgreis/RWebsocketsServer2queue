@@ -8,10 +8,13 @@ import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.servlet.http.HttpSession;
+import javax.websocket.EndpointConfig;
 
-import javax.websocket.OnClose;
+
 import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
+import javax.websocket.OnClose;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 import org.json.simple.JSONObject;
@@ -26,7 +29,7 @@ import org.json.simple.JSONObject;
  * @contact mgreis@student.dei.uc.pt
  * @Copyright
  */
-@ServerEndpoint("/FServerEndpoint")
+@ServerEndpoint(value = "/FServerEndpoint", configurator = GetHttpSessionConfigurator.class)
 public class FServerEndpoint {
 
     /**
@@ -37,7 +40,7 @@ public class FServerEndpoint {
      */
     static ConcurrentHashMap<Integer, FServerSession> fSessions = new ConcurrentHashMap<Integer, FServerSession>();
     private static int clientID = 0;
-    JsonObjectProcessing processor = new JsonObjectProcessing();
+    static JsonObjectProcessing processor = new JsonObjectProcessing();
 
     /**
      * This next three attributes are not part of the solution. They are used to
@@ -51,6 +54,10 @@ public class FServerEndpoint {
     static UsersList usersList = new UsersList();
     static ServerThread serverThread = new ServerThread(usersList, fSessions);
     static boolean serverThreadNotStarted = true;
+    
+    
+    
+    private HttpSession httpSession;
 
     //static Scheduler scheduler = new Scheduler(fSessions, usersList);
     /**
@@ -59,7 +66,8 @@ public class FServerEndpoint {
      * the user know that the handshake was successful.
      */
     @OnOpen
-    public void onOpen(Session session) {
+    public void onOpen(Session session ) {
+        System.out.println( "Cookie!!" +((PrincipalWithSession) session.getUserPrincipal()).getSession().getId());
         if (serverThreadNotStarted) {
             System.out.println("STARTING");
             serverThread.start();
@@ -198,4 +206,19 @@ public class FServerEndpoint {
         sessionUser.remove(session);
 
     }
+
+    /*@onError
+    public void onError(Throwable ex,Session session){
+        System.out.println(ex);
+    }*/
+    
+    
+    public void setHttpSession(HttpSession httpSession)
+    {
+    if (this.httpSession != null)
+        throw new IllegalStateException("HttpSession has already been set!");
+
+    this.httpSession = httpSession;
+    }
+
 }
